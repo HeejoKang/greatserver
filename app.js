@@ -3,11 +3,26 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var mongodb = require('mongodb');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
 var app = express();
+
+//몽고DB 연결
+function connectDB() {
+  var databaseUrl = "mongodb://localhost:27017/testdb"; 
+  //port 27017 == 몽고DB가 기본으로 갖고 있는 번호
+
+  //DB 연결
+  mongodb.connect(databaseUrl, function(err, database) {
+    if(err) throw err; //에러가 들어왔다면 걸러줍니다
+    console.log('DB 연결 완료! : ' + databaseUrl);
+    app.set('database', database.db('testdb'));
+  });
+}
+connectDB();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
