@@ -1,5 +1,7 @@
-var express = require('express');
+var express = require('express'); //npm패키지들은 path설정 없이 이름만으로 불러올 수 있음
+var util = require('../util');
 var router = express.Router();
+
 
 var ResponseType = {
   INVALID_USERNAME: 0,
@@ -112,13 +114,10 @@ router.post('/signin', function(req, res, next) {
       }
       
     });
-
-
-    
-
+ 
   }
-
-
+  
+  
 });
 //json파일로 받아 enum타입으로 정수를 설정하여 보냄: 일반 스트링자료보다 더욱 다양한 정보를 전달할 수 있음(결과값 + @)
 
@@ -133,7 +132,7 @@ router.post('/add', function(req,res,next) {
   
   var database = req.app.get("database");
   var users = database.collection('users'); //저장대상db
-
+  
   //에러 대비 기능: DB상 항목(?)에 해당하는 변수에 값을 넣어 보내줍니다
   if(username !== undefined && password !== undefined && 
     nickname !== undefined /*&& score !== undefined*/)
@@ -142,8 +141,21 @@ router.post('/add', function(req,res,next) {
       function(err, result) { 
         res.status(200).send("success");
       });
-  }
+    }
+    
+  }); 
+  
+  /* Post와 Get
+  (1) 전달하려는 값이 '저장'의 목적인가? = Post
+  (2) 전달하려는 값이 '링크' '검색'의 목적인가? = Get */
 
-}); 
+  ///Score 추가///
+  router('/addscore/:score', function(req, res, next) {
 
-module.exports = router;
+  });
+
+  ///Score 불러오기///
+  router.get('/score', function(req, res, next){
+
+  })
+  module.exports = router;
