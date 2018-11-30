@@ -158,7 +158,7 @@ router.post('/add', function(req,res,next) {
     if(username != undefined) {
       users.update({ username: username }, //$set score항목만 업데이트 하시오
         {$set: {
-        score: score,
+        score: Number(score),
         updatedAt: Date.now() //DB변경 날짜 추가
       }}, {upsert: true }); //upsert 기존 DB자료에 score항목이 없을 경우 새 항목으로 만들어 DB에 추가
     }
