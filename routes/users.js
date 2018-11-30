@@ -147,15 +147,20 @@ router.post('/add', function(req,res,next) {
   (2) 회원의 정보나 기능을 복구 가능하게끔 짜는 방식이 필요 */
 
   ///Score 추가///
-  router.post('/addscore/:score', function(req, res, next) {
+  router.get('/addscore/:score', function(req, res, next) {
+    var score = req.params.score;
     var username = req.session.username; //이미 로그인 된 상태인지 확인했지만(is Logined) 다시 확인
-    
+    //현재 username의 중복을 검사하지 않기 때문에 오류가 나타날 가능성이 있음
+
     var database = req.app.get("database");
     var users = database.collection('users');
 
     if(username != undefined) {
-      
-      users.update({ username: username }, {score: 30})
+      users.update({ username: username }, //$set score항목만 업데이트 하시오
+        {$set: {
+        score: score,
+        updatedAt: Date.now() //DB변경 날짜 추가
+      }}, {upsert: true }); //upsert 기존 DB자료에 score항목이 없을 경우 새 항목으로 만들어 DB에 추가
     }
   });
 
