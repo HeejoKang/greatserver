@@ -1,5 +1,6 @@
 var express = require('express'); //npm패키지들은 path설정 없이 이름만으로 불러올 수 있음
 var util = require('../util');
+const { ObjectId } = require('mongodb');
 var router = express.Router();
 
 
@@ -149,7 +150,8 @@ router.post('/add', function(req,res,next) {
   ///Score 추가///
   router.get('/addscore/:score', function(req, res, next) {
     var score = req.params.score;
-    var username = req.session.username; //이미 로그인 된 상태인지 확인했지만(is Logined) 다시 확인
+    var username = req.session.username;
+    //var userid = req.session.userid; //이미 로그인 된 상태인지 확인했지만(is Logined) 다시 확인
     //현재 username의 중복을 검사하지 않기 때문에 오류가 나타날 가능성이 있음
 
     var database = req.app.get("database");
@@ -160,12 +162,30 @@ router.post('/add', function(req,res,next) {
         {$set: {
         score: Number(score),
         updatedAt: Date.now() //DB변경 날짜 추가
-      }}, {upsert: true }); //upsert 기존 DB자료에 score항목이 없을 경우 새 항목으로 만들어 DB에 추가
+      }}, {upsert: true }, function(err) {
+        if(err) {
+          res.status(200).send("failure");
+        }
+        res.status(200).send("success");
+      }); //upsert 기존 DB자료에 score항목이 없을 경우 새 항목으로 만들어 DB에 추가
     }
   });
 
   ///Score 불러오기///
   router.get('/score', function(req, res, next){
+    var username = req.session.username;
+    var database = req.app.get("database");
+    var users = database.collection('users');
 
+    users.findOne({username: username}, function(err, result) {
+      if(err) throw err; //상위 에러처리 함수에게 전달
+
+      var resultObj = {
+        id: result._id.toString(),
+        score: result.score
+      };
+
+      res.json(resultObj);
+    });
   });
   module.exports = router;
