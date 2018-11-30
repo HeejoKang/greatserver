@@ -1,6 +1,6 @@
 var express = require('express'); //npm패키지들은 path설정 없이 이름만으로 불러올 수 있음
 var util = require('../util');
-const { ObjectId } = require('mongodb');
+const { ObjectId } = require('mongodb'); //문자열을 objectID타입으로 변환하려 함
 var router = express.Router();
 
 
@@ -81,6 +81,8 @@ router.post('/signin', function(req, res, next) {
         if(password === result.password) {
           ////세션에 값을 저장하는 방식////
           req.session.isAuthenticated = true; //인증을 한 번 받았는가?
+          req.session.userid = result._id.toString(); //파일로 저장해야하기 때문에 스트링타입으로 바꿔줌
+          // userid는 절대 중복되지 않는 참조값이므로 개개인을 확실하게 식별 가능함
           req.session.username = result.username;
           req.session.nickname = result.nickname;
           
@@ -150,16 +152,15 @@ router.post('/add', function(req,res,next) {
   ///Score 추가///
   router.get('/addscore/:score', function(req, res, next) {
     var score = req.params.score;
-    var username = req.session.username;
-    //var userid = req.session.userid; //이미 로그인 된 상태인지 확인했지만(is Logined) 다시 확인
+    var userid = req.session.userid;
     //현재 username의 중복을 검사하지 않기 때문에 오류가 나타날 가능성이 있음
 
     var database = req.app.get("database");
     var users = database.collection('users');
 
-    if(username != undefined) {
-      users.update({ username: username }, //$set score항목만 업데이트 하시오
-        {$set: {
+    if(userid != undefined) {
+      result = users.updateOne({_id: ObjectId(userid)},
+        {$set: { //$set score항목만 업데이트 하시오
         score: Number(score),
         updatedAt: Date.now() //DB변경 날짜 추가
       }}, {upsert: true }, function(err) {
@@ -173,11 +174,11 @@ router.post('/add', function(req,res,next) {
 
   ///Score 불러오기///
   router.get('/score', function(req, res, next){
-    var username = req.session.username;
+    var userid = req.session.userid;
     var database = req.app.get("database");
     var users = database.collection('users');
 
-    users.findOne({username: username}, function(err, result) {
+    users.findOne({_id: ObjectId(userid)}, function(err, result) {
       if(err) throw err; //상위 에러처리 함수에게 전달
 
       var resultObj = {
