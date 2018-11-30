@@ -4,11 +4,22 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var mongodb = require('mongodb');
+var session = require('express-session'); //1129
+var fileStore = require('session-file-store')(session); //1129
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
 var app = express();
+
+//1129
+app.use(session({
+  secret: 'session_login', //이름은 마음대로 지정
+  resave: false,
+  saveUninitialized: true,
+  store: new fileStore() //저장위치
+  //cookie: { secure: true } https라는 다른 프로그램용????
+}));
 
 //몽고DB 연결
 function connectDB() {
