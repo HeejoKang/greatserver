@@ -1,3 +1,4 @@
+/*이 항목은 모두 단방향 통신이었음! */
 var express = require('express'); //npm패키지들은 path설정 없이 이름만으로 불러올 수 있음
 var util = require('../util');
 const { ObjectId } = require('mongodb'); //문자열을 objectID타입으로 변환하려 함
@@ -74,37 +75,46 @@ router.post('/signin', function(req, res, next) {
   //(1) 유저아이디가 DB상에 존재하는지 확인
   if(username !== undefined && password !== undefined) {
     users.findOne({ username: username }, function( err, result){
-
       //== 형변환이 일어날 수 있음 ===자료형까지 일치하는지 확인
       // result 값이 null인 경우 서버가 죽는 버그를 걸러줄 수 있음(intresult에 값이 없을 경우 그대로 failure 송출)
       if(result){
-        if(password === result.password) {
+        var compareResult = bcrypt.compareSync(password, result.password);
+        if(compareResult) {
           ////세션에 값을 저장하는 방식////
           req.session.isAuthenticated = true; //인증을 한 번 받았는가?
           req.session.userid = result._id.toString(); //파일로 저장해야하기 때문에 스트링타입으로 바꿔줌
           // userid는 절대 중복되지 않는 참조값이므로 개개인을 확실하게 식별 가능함
           req.session.username = result.username;
           req.session.nickname = result.nickname;
-          
-
-          //res.writeHead(200, {'Session-ID':['sessionID=' + sessionID + '; Path=/']});
-          //var ret = Json.stringify({result: ResponseType.SUCCESS});
-          //res.write(ret);
-          //res.end();
-          
-          //res.writeHead(200, { 'Set-Cookie':['username=' + result.username + '; Path=/']});
-          //쿠키는 해당폴더를 기준으로 발급이 되기 때문에 최상위 폴더에서는 쿠키에 접근할 수 없는 문제가 있음
-          // Path=/를 지정해줌으로서 최상위 서버(localhost:3000)에서도 접속 가능하게 됨
           res.json({result: ResponseType.SUCCESS});
-          //var ret = JSON.stringify({ result: ResponseType.SUCCESS });
-          //res.write(ret); 
-          //write함수: 클라이언트에게 문자열을 전달하는 함수 최종적으로 res.end()와 함께 사용하여야 온전히 전송 가능
-          //res.end();
         }
         else{
           res.json({result: ResponseType.INVALID_PASSWORD});
         }
       }
+        // if(password === result.password) {
+        //   ////세션에 값을 저장하는 방식////
+        //   req.session.isAuthenticated = true; //인증을 한 번 받았는가?
+        //   req.session.userid = result._id.toString(); //파일로 저장해야하기 때문에 스트링타입으로 바꿔줌
+        //   // userid는 절대 중복되지 않는 참조값이므로 개개인을 확실하게 식별 가능함
+        //   req.session.username = result.username;
+        //   req.session.nickname = result.nickname;
+          
+
+        //   //res.writeHead(200, {'Session-ID':['sessionID=' + sessionID + '; Path=/']});
+        //   //var ret = Json.stringify({result: ResponseType.SUCCESS});
+        //   //res.write(ret);
+        //   //res.end();
+          
+        //   //res.writeHead(200, { 'Set-Cookie':['username=' + result.username + '; Path=/']});
+        //   //쿠키는 해당폴더를 기준으로 발급이 되기 때문에 최상위 폴더에서는 쿠키에 접근할 수 없는 문제가 있음
+        //   // Path=/를 지정해줌으로서 최상위 서버(localhost:3000)에서도 접속 가능하게 됨
+        //   res.json({result: ResponseType.SUCCESS});
+        //   //var ret = JSON.stringify({ result: ResponseType.SUCCESS });
+        //   //res.write(ret); 
+        //   //write함수: 클라이언트에게 문자열을 전달하는 함수 최종적으로 res.end()와 함께 사용하여야 온전히 전송 가능
+        //   //res.end();
+        // }
       else{
         res.json({result: ResponseTyped.INVALID_USERNAME});
       }
@@ -112,8 +122,6 @@ router.post('/signin', function(req, res, next) {
     });
  
   }
-  
-  
 });
 //json파일로 받아 enum타입으로 정수를 설정하여 보냄: 일반 스트링자료보다 더욱 다양한 정보를 전달할 수 있음(결과값 + @)
 
@@ -125,9 +133,14 @@ router.post('/add', function(req,res,next) {
   var password = req.body.password;
   var nickname = req.body.nickname;
   //var score = req.body.score;
+
+  //JS는 기본적으로 모든 함수가 비동기적으로 움직임
+  // 함수명Sync를 붙이면 동기적으로 움직이게 되면서 해당함수가 모두 처리될 때까지 프로그램이 멈춤(다음라인으로 넘어가지X)
+  var salt = bcrypt.genSaltSync(saltRounds);
+  var hash = bcrypt.hashSync(password, salt);
   
   var database = req.app.get("database");
-  var users = database.collection('users'); //저장대상db
+  var users = database.collection('users'); 
   
   //에러 대비 기능: DB상 항목(?)에 해당하는 변수에 값을 넣어 보내줍니다
   if(username !== undefined && password !== undefined && 
@@ -189,4 +202,21 @@ router.post('/add', function(req,res,next) {
       res.json(resultObj);
     });
   });
+
+  /* 해시처리와 해시함수
+  (1) 특정 길이로 만들어 사용하려 할 때 해시를 사용함
+  (2) 패스워드를 그냥 그대로 저장한다면 정보탈취나 보안의 위험이 커짐
+  md5처럼 해시처리를 하면 암호화된다고 볼 수 있음
+  
+  <암호화의 방식>
+  (1) 대칭형 암호화
+  같은 입력 -> 같은 결과 호출
+  1234 -> asdf
+  1234 -> asdf
+  해시처리 된 값 -> 변경 전 값으로 되돌릴 수 X
+  하지만 유저의 비밀번호를 통해 동일한 값을 항상 호출할 수 있음
+  (2) 비대칭형 암호화
+  같은 입력이라도 -> 다른 결과 호출
+  1234 -> wedg
+  1234 -> hfdd*/
   module.exports = router;
