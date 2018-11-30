@@ -9,6 +9,6 @@ util.isLogined = function(req, res, next){ //next (1)번 무명함수의 역할�
         return next();
     } 
     res.status(403).send();
-}
+};
 
 module.exports = util; //required로 util안의 값/함수에 접근하고 사용할 수 있음

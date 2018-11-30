@@ -49,20 +49,13 @@ router.get('/', function(req, res, next) {
   }
 })*/
 
-router.get('/info', function(req, res, next){
-   //req.session.isAuthenticated 이거 play씬에서 새로 생성된 세션이라서 안 ㅗ대요 안 되요겠지
-  if(req.session.isAuthenticated) { 
+router.get('/info', util.isLogined, function(req, res, next){ //util.isLogined를 통해 로그인 했을 때만 기능할 것임
+   //req.session.isAuthenticated 
     res.json({
       username: req.session.username,
       nickname: req.session.nickname
     });
-   }
-  else{
-    res.json({
-      username: '',
-      nickname: ''
-    });
-   }
+   
 });
 
 
@@ -72,7 +65,7 @@ router.get('/info', function(req, res, next){
 router.post('/signin', function(req, res, next) {
   var username = req.body.username; //body에 있는 username이라는 변수의 값을 읽어서 var username에 전달
   var password = req.body.password;
-  var sessionID;
+  //var sessionID;
   var database = req.app.get("database"); //app에 연결된 database를 읽어옴
   var users = database.collection('users'); //데이터베이스 내에 있는 users 콜렉션을 읽어옴
 
@@ -91,15 +84,15 @@ router.post('/signin', function(req, res, next) {
           req.session.nickname = result.nickname;
           
 
-          res.writeHead(200, {'Session-ID':['sessionID=' + sessionID + '; Path=/']});
-          var ret = Json.stringify({result: ResponseType.SUCCESS});
-          res.write(ret);
-          res.end();
+          //res.writeHead(200, {'Session-ID':['sessionID=' + sessionID + '; Path=/']});
+          //var ret = Json.stringify({result: ResponseType.SUCCESS});
+          //res.write(ret);
+          //res.end();
           
           //res.writeHead(200, { 'Set-Cookie':['username=' + result.username + '; Path=/']});
           //쿠키는 해당폴더를 기준으로 발급이 되기 때문에 최상위 폴더에서는 쿠키에 접근할 수 없는 문제가 있음
           // Path=/를 지정해줌으로서 최상위 서버(localhost:3000)에서도 접속 가능하게 됨
-          //res.json({result: ResponseType.SUCCESS});
+          res.json({result: ResponseType.SUCCESS});
           //var ret = JSON.stringify({ result: ResponseType.SUCCESS });
           //res.write(ret); 
           //write함수: 클라이언트에게 문자열을 전달하는 함수 최종적으로 res.end()와 함께 사용하여야 온전히 전송 가능
@@ -149,13 +142,25 @@ router.post('/add', function(req,res,next) {
   (1) 전달하려는 값이 '저장'의 목적인가? = Post
   (2) 전달하려는 값이 '링크' '검색'의 목적인가? = Get */
 
-  ///Score 추가///
-  router('/addscore/:score', function(req, res, next) {
+  /*Node.js 서버는 자주 죽을 수 있으나 다시 켜주는 utilty가 존재함
+  (1) node에서의 핵심은 구조의 탄탄함 x
+  (2) 회원의 정보나 기능을 복구 가능하게끔 짜는 방식이 필요 */
 
+  ///Score 추가///
+  router.post('/addscore/:score', function(req, res, next) {
+    var username = req.session.username; //이미 로그인 된 상태인지 확인했지만(is Logined) 다시 확인
+    
+    var database = req.app.get("database");
+    var users = database.collection('users');
+
+    if(username != undefined) {
+      
+      users.update({ username: username }, {score: 30})
+    }
   });
 
   ///Score 불러오기///
   router.get('/score', function(req, res, next){
 
-  })
+  });
   module.exports = router;
