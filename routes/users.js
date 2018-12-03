@@ -3,6 +3,8 @@ var express = require('express'); //npm패키지들은 path설정 없이 이름�
 var util = require('../util');
 const { ObjectId } = require('mongodb'); //문자열을 objectID타입으로 변환하려 함
 var router = express.Router();
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 
 var ResponseType = {
@@ -70,7 +72,6 @@ router.post('/signin', function(req, res, next) {
   //var sessionID;
   var database = req.app.get("database"); //app에 연결된 database를 읽어옴
   var users = database.collection('users'); //데이터베이스 내에 있는 users 콜렉션을 읽어옴
-
   
   //(1) 유저아이디가 DB상에 존재하는지 확인
   if(username !== undefined && password !== undefined) {
@@ -92,6 +93,7 @@ router.post('/signin', function(req, res, next) {
           res.json({result: ResponseType.INVALID_PASSWORD});
         }
       }
+      /* #Region 수업 시간 중 수정된 사항 */
         // if(password === result.password) {
         //   ////세션에 값을 저장하는 방식////
         //   req.session.isAuthenticated = true; //인증을 한 번 받았는가?
@@ -115,6 +117,8 @@ router.post('/signin', function(req, res, next) {
         //   //write함수: 클라이언트에게 문자열을 전달하는 함수 최종적으로 res.end()와 함께 사용하여야 온전히 전송 가능
         //   //res.end();
         // }
+
+        /* #endRegion */
       else{
         res.json({result: ResponseTyped.INVALID_USERNAME});
       }
